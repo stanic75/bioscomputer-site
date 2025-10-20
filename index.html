@@ -12,10 +12,14 @@
 </head>
 <body class="min-h-screen bg-neutral-950 text-neutral-100">
   <div id="root"></div>
+
+  <!-- React UMD -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
   <script type="text/javascript">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
+
     const CONFIG = {
       brand: { name:"Bios Computer", phone:"+39 338 811 6529", email:"info@bioscomputer.it", address:"Via Fabio Massimo, 11, 64020 Morro d'Oro (TE)" },
       hero: { headline:"La tua infrastruttura IT, sempre sotto controllo.", subheadline:"Gestione completa di reti, server, PC, sicurezza, cloud, posta aziendale e centralino VoIP.", background:"https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=1600&auto=format&fit=crop" },
@@ -36,13 +40,13 @@
         { name:"Assistenza remota 90 minuti", hours:1.5, price_eur:55, price_note:"+ IVA", link:"https://buy.stripe.com/eVq5kFcsQ6UP3MX9Aec3m02" }
       ],
       clients: [
-        { name:"Kico Srl", logo:"assets/logos/kico.svg", site:"https://www.kico.it" },
-        { name:"Braderm Srl", logo:"assets/logos/braderm.svg", site:"https://www.braderm.com" },
-        { name:"LCB", logo:"assets/logos/lcb.svg", site:"https://www.lcblab.com" },
-        { name:"Acotec Srl", logo:"assets/logos/acotec.svg", site:"https://www.acotecsrl.it" },
-        { name:"Ems Power", logo:"assets/logos/emspower.svg", site:"https://www.emspower.it" },
-        { name:"Ambiente 2000", logo:"assets/logos/ambiente2000.svg", site:"https://www.ambiente2000.eu" },
-        { name:"Idroter", logo:"assets/logos/idroter.svg", site:"https://www.idroter.net" }
+        { name:"Kico Srl", site:"https://www.kico.it" },
+        { name:"Braderm Srl", site:"https://www.braderm.com" },
+        { name:"LCB", site:"https://www.lcblab.com" },
+        { name:"Acotec Srl", site:"https://www.acotecsrl.it" },
+        { name:"Ems Power", site:"https://www.emspower.it" },
+        { name:"Ambiente 2000", site:"https://www.ambiente2000.eu" },
+        { name:"Idroter", site:"https://www.idroter.net" }
       ],
       bulletinEndpoint: "/.netlify/functions/bulletin"
     };
@@ -86,14 +90,10 @@
       return React.createElement('section',{className:"relative isolate overflow-hidden pt-28"},
         React.createElement('img',{src:CONFIG.hero.background,alt:"",className:"absolute inset-0 -z-10 h-full w-full object-cover opacity-25"}),
         React.createElement(Container,null,
-          React.createElement('div',{className:"py-20"},
+          React.createElement('div',{className:"py-16"},
             React.createElement('h1',{className:"max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl"},CONFIG.hero.headline),
             React.createElement('p',{className:"mt-6 max-w-2xl text-lg text-neutral-300"},CONFIG.hero.subheadline),
-            React.createElement('div',{className:"mt-10 flex flex-wrap gap-3"},
-              React.createElement('a',{href:"#contatti",className:"inline-flex items-center rounded-2xl bg-lime-400 px-6 py-3 text-base font-semibold text-neutral-950 shadow-lg transition hover:bg-lime-500"},"Richiedi un audit gratuito"),
-              React.createElement('a',{href:"#servizi",className:"inline-flex items-center rounded-2xl bg-neutral-800 px-6 py-3 text-base font-semibold text-neutral-100 hover:bg-neutral-700"},"Scopri i servizi")
-            ),
-            React.createElement('div',{className:"mt-12 grid max-w-3xl grid-cols-3 gap-4 rounded-2xl bg-white/5 p-4 text-sm"},
+            React.createElement('div',{className:"mt-8 grid max-w-3xl grid-cols-3 gap-4 rounded-2xl bg-white/5 p-4 text-sm"},
               CONFIG.highlights.map(h=>React.createElement('div',{key:h.label,className:"text-center"},
                 React.createElement('div',{className:"font-bold"},h.value),
                 React.createElement('div',{className:"text-neutral-300/80"},h.label)
@@ -104,25 +104,61 @@
       );
     }
 
-    function Tag({label,colorClass}){return React.createElement('span',{className:`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${colorClass}`},label);}
-    function BulletinCard({post}){
-      const colorClass="border-sky-600/40 bg-sky-500/20 text-sky-300";
-      return React.createElement('article',{className:"rounded-2xl border border-neutral-800 bg-neutral-900 p-5 shadow-sm hover:shadow transition"},
-        React.createElement('div',{className:"flex items-center justify-between gap-3"},
-          React.createElement(Tag,{label:post.tag||"News",colorClass}),
-          React.createElement('div',{className:"text-xs text-neutral-400"},new Date(post.date).toLocaleDateString('it-IT'))
-        ),
-        React.createElement('h3',{className:"mt-3 text-lg font-semibold text-neutral-100"},post.title),
-        React.createElement('p',{className:"mt-2 text-sm text-neutral-300"},post.summary||""),
-        post.source&&post.source.href && React.createElement('a',{href:post.source.href,className:"mt-3 inline-flex items-center gap-1 text-sm text-neutral-300 hover:text-neutral-100"},"🔗 ",post.source.label)
-      );
-    }
-    function Bulletin(){
-      const [items,setItems]=useState([]); const [loaded,setLoaded]=useState(false);
-      useEffect(()=>{(async()=>{try{const r=await fetch(CONFIG.bulletinEndpoint,{headers:{Accept:"application/json"}});if(r.ok){const d=await r.json();if(Array.isArray(d.posts))setItems(d.posts.slice(0,9));}}catch(e){}finally{setLoaded(true);}})();},[]);
+    // --- Bulletin Carousel (automatic) ---
+    function BulletinCarousel(){
+      const [items,setItems]=useState([]);
+      const [loaded,setLoaded]=useState(false);
+      const [idx,setIdx]=useState(0);
+      const [paused,setPaused]=useState(false);
+      const timerRef = useRef(null);
+
+      useEffect(()=>{(async()=>{
+        try{
+          const r = await fetch(CONFIG.bulletinEndpoint,{headers:{Accept:"application/json"}});
+          const data = r.ok ? await r.json() : {posts:[]};
+          const list = Array.isArray(data.posts) ? data.posts.slice(0,10) : [];
+          setItems(list);
+        }catch(e){} finally{ setLoaded(true); }
+      })();},[]);
+
+      useEffect(()=>{
+        if(!items.length || paused) return;
+        timerRef.current = setInterval(()=> setIdx((i)=> (i+1) % items.length ), 7000);
+        return ()=> clearInterval(timerRef.current);
+      },[items,paused]);
+
+      const go = (n)=> setIdx((i)=> (i+n+items.length) % items.length);
+
       return React.createElement(Section,{id:"bollettino",title:"Bollettino IT",subtitle:"Minacce, patch e soluzioni per aziende. Aggiornato regolarmente."},
-        React.createElement('div',{className:"grid gap-5 sm:grid-cols-2 lg:grid-cols-3"},items.map(p=>React.createElement(BulletinCard,{key:p.id,post:p}))),
-        !loaded && React.createElement('div',{className:"mt-8 text-sm text-neutral-400"},"Caricamento aggiornamenti…")
+        React.createElement('div',{
+          className:"relative mx-auto max-w-4xl overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900",
+          onMouseEnter:()=>setPaused(true),
+          onMouseLeave:()=>setPaused(false)
+        },
+          React.createElement('div',{className:"relative h-64"},
+            items.map((p,i)=> React.createElement('article',{
+              key:p.id||i,
+              className:`absolute inset-0 p-6 transition-all duration-700 ease-out ${i===idx?'opacity-100 translate-y-0':'opacity-0 translate-y-3'}`
+            },
+              React.createElement('div',{className:"flex items-center justify-between text-xs text-neutral-400"},
+                React.createElement('span',null, new Date(p.date).toLocaleDateString('it-IT')),
+                p.source && p.source.label && React.createElement('span',null,p.source.label)
+              ),
+              React.createElement('h3',{className:"mt-3 text-xl font-semibold text-neutral-100"}, p.title),
+              React.createElement('p',{className:"mt-2 line-clamp-5 text-sm text-neutral-300"}, p.summary || ""),
+              p.source && p.source.href && React.createElement('a',{href:p.source.href,target:"_blank",rel:"noopener",
+                className:"mt-4 inline-flex items-center gap-1 text-sm text-lime-300 hover:text-lime-200"},"Apri fonte →")
+            ))
+          ),
+          items.length>1 && React.createElement('div',{className:"absolute inset-x-0 bottom-3 flex items-center justify-between px-4"},
+            React.createElement('button',{onClick:()=>go(-1),className:"rounded-full bg-neutral-800/70 px-3 py-2 text-sm hover:bg-neutral-700/80"},"←"),
+            React.createElement('div',null,
+              items.map((_,i)=> React.createElement('span',{key:i,className:`mx-1 inline-block h-2 w-2 rounded-full ${i===idx?'bg-lime-400':'bg-neutral-600'}` }))
+            ),
+            React.createElement('button',{onClick:()=>go(1),className:"rounded-full bg-neutral-800/70 px-3 py-2 text-sm hover:bg-neutral-700/80"},"→")
+          )
+        ),
+        loaded && !items.length && React.createElement('p',{className:"mt-4 text-center text-sm text-neutral-400"},"Nessun aggiornamento disponibile al momento.")
       );
     }
 
@@ -135,23 +171,18 @@
       )))
     );}
 
-    // --- Improved Clients section ---
+    // Clients: text only with subtle fade/translate on hover
     function Clients(){
       return React.createElement(Section,{id:"clienti",title:"Alcune aziende che seguiamo",subtitle:"Partnership di lungo periodo e risultati concreti"},
         React.createElement('div',{className:"grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"},
           CONFIG.clients.map(c=>React.createElement('a',{key:c.name,href:c.site,target:"_blank",rel:"noopener",
               className:"group relative overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-sm transition hover:border-neutral-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-lime-400/40"},
-            React.createElement('div',{className:"flex h-20 items-center justify-center"},
-              React.createElement('img',{src:c.logo,alt:c.name,className:"max-h-12 w-auto object-contain grayscale opacity-80 transition group-hover:grayscale-0 group-hover:opacity-100"})
-            ),
-            React.createElement('div',{className:"mt-4 text-center"},
-              React.createElement('div',{className:"text-sm font-medium text-neutral-200"},c.name)
-            ),
-            React.createElement('div',{className:"pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition",
-                style:{boxShadow:"0 0 0 1px rgba(163,230,53,0.12), 0 10px 30px rgba(163,230,53,0.06) inset"}})
+            React.createElement('div',{className:"flex h-24 items-center justify-center"},
+              React.createElement('div',{className:"text-base font-semibold text-neutral-100 opacity-80 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition duration-300 ease-out"},c.name)
+            )
           ))
         ),
-        React.createElement('p',{className:"mt-6 text-center text-sm text-neutral-400"},"I loghi sono utilizzati a solo scopo illustrativo per indicare i clienti serviti.")
+        React.createElement('p',{className:"mt-6 text-center text-sm text-neutral-400"},"I nomi aziendali sono riportati a titolo illustrativo.")
       );
     }
 
@@ -170,7 +201,7 @@
           )
         ))
       ),
-      React.createElement('p',{className:"mt-6 text-center text-xs text-neutral-400"},"I pacchetti sono dedicati all'assistenza remota. Interventi on-site esclusi. Possibilità di SLA dedicato su contratto.")
+      React.createElement('p',{className:"mt-6 text-center text-xs text-neutral-400"},"I pacchetti sono dedicati all'assistenza remota. Interventi on-site esclusi.")
     );}
 
     function Contact(){return React.createElement(Section,{id:"contatti",title:"Parliamo del tuo progetto",subtitle:"Ti rispondiamo in 24 ore lavorative"},
@@ -216,7 +247,7 @@
     function App(){return React.createElement(React.Fragment,null,
       React.createElement(Header,null),
       React.createElement(Hero,null),
-      React.createElement(Bulletin,null),
+      React.createElement(BulletinCarousel,null),
       React.createElement(Services,null),
       React.createElement(Clients,null),
       React.createElement(Purchase,null),
