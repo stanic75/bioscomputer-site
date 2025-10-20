@@ -1,0 +1,8 @@
+{
+  "name": "bioscomputer-site",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "netlify:build": "npm --prefix netlify/functions install"
+  }
+}
