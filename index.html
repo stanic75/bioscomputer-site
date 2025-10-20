@@ -13,7 +13,6 @@
 <body class="min-h-screen bg-neutral-950 text-neutral-100">
   <div id="root"></div>
 
-  <!-- React UMD -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
@@ -171,18 +170,62 @@
       )))
     );}
 
-    // Clients: text only with subtle fade/translate on hover
-    function Clients(){
-      return React.createElement(Section,{id:"clienti",title:"Alcune aziende che seguiamo",subtitle:"Partnership di lungo periodo e risultati concreti"},
-        React.createElement('div',{className:"grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"},
-          CONFIG.clients.map(c=>React.createElement('a',{key:c.name,href:c.site,target:"_blank",rel:"noopener",
-              className:"group relative overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-sm transition hover:border-neutral-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-lime-400/40"},
-            React.createElement('div',{className:"flex h-24 items-center justify-center"},
-              React.createElement('div',{className:"text-base font-semibold text-neutral-100 opacity-80 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition duration-300 ease-out"},c.name)
-            )
-          ))
+    // --- Clients Carousel (automatic, responsive) + DOTS (lime) ---
+    function ClientsCarousel(){
+      const items = CONFIG.clients;
+      const [index, setIndex] = useState(0);
+      const [perView, setPerView] = useState(4);
+      const [paused, setPaused] = useState(false);
+      const timerRef = useRef(null);
+
+      useEffect(()=>{
+        const mq1 = window.matchMedia('(max-width: 640px)');
+        const mq2 = window.matchMedia('(max-width: 1024px)');
+        const calc = () => setPerView(mq1.matches ? 1 : (mq2.matches ? 2 : 4));
+        calc();
+        mq1.addEventListener('change', calc);
+        mq2.addEventListener('change', calc);
+        return ()=>{ mq1.removeEventListener('change', calc); mq2.removeEventListener('change', calc); };
+      },[]);
+
+      useEffect(()=>{
+        if(!items.length || paused) return;
+        timerRef.current = setInterval(()=> setIndex(i => (i + 1) % items.length), 3500);
+        return ()=> clearInterval(timerRef.current);
+      },[items.length, paused]);
+
+      const itemWidth = 100 / perView;
+      const translate = -(index * itemWidth);
+
+      return React.createElement(Section,{id:"clienti",title:"Aziende che seguiamo",subtitle:null},
+        React.createElement('div',{
+          className:"relative overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900",
+          onMouseEnter:()=>setPaused(true), onMouseLeave:()=>setPaused(false),
+          onTouchStart:()=>setPaused(true), onTouchEnd:()=>setPaused(false)
+        },
+          React.createElement('div',{
+            className:"flex transition-transform duration-700 ease-out",
+            style:{ width: `${items.length * itemWidth}%`, transform: `translateX(${translate}%)` }
+          },
+            items.map((c, i) => React.createElement('a',{
+              key: c.name + i,
+              href: c.site, target:"_blank", rel:"noopener",
+              className:"flex items-center justify-center",
+              style:{ width: `${itemWidth}%` }
+            },
+              React.createElement('div',{className:"m-4 w-[92%] rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-6 text-center shadow-sm hover:border-neutral-700 hover:shadow-md transition"},
+                React.createElement('div',{className:"text-base font-semibold text-neutral-100"}, c.name)
+              )
+            ))
+          ),
+          items.length>1 && React.createElement('div',{className:"absolute inset-x-0 bottom-3 flex items-center justify-center"},
+            items.map((_,i)=> React.createElement('button',{
+              key:i, onClick:()=>setIndex(i),
+              className:`mx-1 inline-block h-2.5 w-2.5 rounded-full ${i===index?'bg-lime-400':'bg-neutral-600'} focus:outline-none focus:ring-2 focus:ring-lime-400/60`
+            }))
+          )
         ),
-        React.createElement('p',{className:"mt-6 text-center text-sm text-neutral-400"},"I nomi aziendali sono riportati a titolo illustrativo.")
+        React.createElement('p',{className:"mt-6 text-center text-sm text-neutral-300"},"Alcune delle aziende che si affidano a Bios Computer per la gestione della propria infrastruttura IT.")
       );
     }
 
@@ -249,7 +292,7 @@
       React.createElement(Hero,null),
       React.createElement(BulletinCarousel,null),
       React.createElement(Services,null),
-      React.createElement(Clients,null),
+      React.createElement(ClientsCarousel,null),
       React.createElement(Purchase,null),
       React.createElement(Contact,null),
       React.createElement(Footer,null)
