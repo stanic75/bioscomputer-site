@@ -1,53 +1,59 @@
+// Netlify Function: bulletin.js
+// Aggrega notizie di sicurezza da fonti affidabili (Zyxel rimosso).
 const Parser = require('rss-parser');
-const parser = new Parser({ timeout: 15000 });
+const parser = new Parser({
+  timeout: 15000,
+  headers: { 'User-Agent': 'BiosComputer-Bulletin/1.0 (+https://bioscomputer.it)' }
+});
 
-// lang: 'IT' | 'EN'
-const SOURCES = [
-  // 🇮🇹 Italiane
-  { tag: 'Advisory', label: 'CSIRT Italia', lang: 'IT', url: 'https://www.csirt.gov.it/it/news/feed' },
-  { tag: 'News',     label: 'Securityinfo.it', lang: 'IT', url: 'https://www.securityinfo.it/feed/' },
-  { tag: 'News',     label: 'Leonardo Cybersecurity', lang: 'IT', url: 'https://cybersecurity.leonardo.com/it/rss' },
-
-  // 🇬🇧 Internazionali
-  { tag: 'Patch',    label: 'MSRC', lang: 'EN', url: 'https://msrc.microsoft.com/update-guide/rss' },
-  { tag: 'Advisory', label: 'CISA Alerts', lang: 'EN', url: 'https://www.cisa.gov/news-events/alerts.xml' },
-  { tag: 'Ricerca',  label: 'NVD CVE', lang: 'EN', url: 'https://nvd.nist.gov/feeds/xml/cve/misc/nvd-rss.xml' },
-  { tag: 'Advisory', label: 'Bitdefender Labs', lang: 'EN', url: 'https://www.bitdefender.com/blog/api/rss/labs/' },
-  { tag: 'Advisory', label: 'Zyxel', lang: 'EN', url: 'https://www.zyxel.com/global/en/support/security-advisories' },
+// Fonti (IT/EN) affidabili
+const FEEDS = [
+  { label: "CSIRT Italia", href: "https://www.csirt.gov.it/feed" },
+  { label: "Securityinfo.it", href: "https://www.securityinfo.it/feed/" },
+  { label: "Leonardo CERT", href: "https://www.leonardocompany.com/en/newsroom/rss" },
+  { label: "Microsoft MSRC", href: "https://msrc.microsoft.com/blog/feed/" },
+  { label: "CISA Advisories", href: "https://www.cisa.gov/cybersecurity-advisories/all.xml" },
+  { label: "NVD (recent CVEs)", href: "https://nvd.nist.gov/feeds/xml/cve/misc/nvd-rss.xml" },
+  { label: "Bitdefender (Business/Labs)", href: "https://www.bitdefender.com/blog/api/rss/?cat=business-insights,labs" }
 ];
 
-function normalizeItem(s, it) {
-  const id = (it.guid || it.id || it.link || it.title || Math.random().toString(36).slice(2)).slice(0, 160);
-  const date = it.isoDate || it.pubDate || it.published || new Date().toISOString();
-  const title = (it.title || '').trim();
-  const summary = (it.contentSnippet || it.summary || it.content || it['content:encoded'] || '').toString().replace(/<[^>]+>/g, '').slice(0, 500);
-  const href = it.link || (it.enclosure && it.enclosure.url) || s.url;
-  return { id, date, title, tag: s.tag, summary, lang: s.lang, cta: null, source: { label: s.label, href } };
-}
+// Helpers
+const normalize = (str = "") => str.replace(/\s+/g, " ").trim();
+const toISO = (d) => {
+  const dd = d ? new Date(d) : new Date();
+  return isNaN(dd.getTime()) ? new Date().toISOString() : dd.toISOString();
+};
 
-exports.handler = async function () {
-  const out = [];
-  for (const s of SOURCES) {
-    try {
-      if (s.label === 'Zyxel' && !/\.xml$|feed|rss/i.test(s.url)) {
-        out.push({
-          id: 'zyxel-advisories',
-          date: new Date().toISOString(),
-          title: 'Zyxel Security Advisories – consulta l\'elenco aggiornato',
-          tag: s.tag,
-          summary: 'Zyxel pubblica periodicamente comunicazioni di sicurezza per gateway, firewall e altri prodotti. Verifica gli aggiornamenti critici. (EN)',
-          lang: s.lang,
-          cta: null,
-          source: { label: s.label, href: s.url }
-        });
-        continue;
-      }
-      const feed = await parser.parseURL(s.url);
-      (feed.items || []).slice(0, 6).forEach(it => out.push(normalizeItem(s, it)));
-    } catch (e) {
-      // ignora singola fonte in errore
-    }
+exports.handler = async () => {
+  try {
+    const all = await Promise.allSettled(FEEDS.map(async (f) => {
+      const feed = await parser.parseURL(f.href);
+      return (feed.items || []).slice(0, 12).map((it) => ({
+        id: it.guid || it.id || it.link || normalize(it.title).slice(0, 80),
+        title: normalize(it.title || ""),
+        summary: normalize((it.contentSnippet || it.content || "").replace(/<[^>]+>/g, "")),
+        date: toISO(it.isoDate || it.pubDate),
+        tag: f.label,
+        source: { label: f.label, href: it.link || f.href }
+      }));
+    }));
+
+    // Flatten + clean
+    const posts = all.flatMap((r) => r.status === "fulfilled" ? r.value : [])
+      .filter(p => p && p.title)                 // solo item con titolo
+      .sort((a,b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 36);                             // tetto massimo
+
+    return {
+      statusCode: 200,
+      headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=300" },
+      body: JSON.stringify({ posts })
+    };
+  } catch (err) {
+    return {
+      statusCode: 200,
+      headers: { "content-type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ posts: [], error: "bulletin_failed" })
+    };
   }
-  out.sort((a,b)=> new Date(b.date) - new Date(a.date));
-  return { statusCode: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=900' }, body: JSON.stringify({ posts: out.slice(0, 15) }) };
 };
