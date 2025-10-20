@@ -1,27 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" width="280" height="64" role="img" aria-label="BIOS Computer">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 72" width="340" height="72" role="img" aria-label="BIOS Computer">
   <defs>
     <style>
       .word { font-family: Manrope, Segoe UI, Roboto, Arial, sans-serif; font-weight: 800; fill: #ffffff; }
       .sub  { font-family: Manrope, Segoe UI, Roboto, Arial, sans-serif; font-weight: 800; fill: #ffffff; letter-spacing: 1px; }
     </style>
   </defs>
-
-  <g transform="translate(12,12)">
+  <g transform="translate(14,14)">
     <!-- B -->
-    <text class="word" x="0"   y="36" font-size="36">B</text>
+    <text class="word" x="0"   y="38" font-size="38">B</text>
     <!-- I -->
-    <text class="word" x="38"  y="36" font-size="36">I</text>
-
-    <!-- O (power) perfectly centered on baseline -->
-    <g transform="translate(60,4)">
-      <circle cx="18" cy="28" r="16" fill="none" stroke="#84cc16" stroke-width="6"/>
-      <rect x="16" y="9.5" width="4" height="15" rx="2" fill="#84cc16"/>
+    <text class="word" x="44"  y="38" font-size="38">I</text>
+    <!-- O (power) aligned to baseline & cap-height visually -->
+    <g transform="translate(74,4)">
+      <circle cx="20" cy="30" r="18" fill="none" stroke="#84cc16" stroke-width="6"/>
+      <rect x="18" y="11" width="4" height="16" rx="2" fill="#84cc16"/>
     </g>
-
     <!-- S -->
-    <text class="word" x="104" y="36" font-size="36">S</text>
-
-    <!-- COMPUTER (full white for max contrast, baseline aligned) -->
-    <text class="sub" x="148" y="36" font-size="22">COMPUTER</text>
+    <text class="word" x="122" y="38" font-size="38">S</text>
+    <!-- COMPUTER (moved right + wider viewBox so final 'R' never clips) -->
+    <text class="sub" x="170" y="38" font-size="24">COMPUTER</text>
   </g>
 </svg>

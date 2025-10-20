@@ -1,11 +1,22 @@
+# Netlify configuration for Bios Computer
+# - Uses Node 18 for Functions
+# - Installs Functions dependencies automatically
+# - Points Functions to ./netlify/functions
+# - SPA-style redirect to index.html
+
 [build]
   publish = "."
-  functions = "netlify/functions"
-  command = "npm --prefix netlify/functions install"
+
+[functions]
+  directory = "netlify/functions"
+
+[context.production.environment]
+  NODE_VERSION = "18"
 
 [[plugins]]
   package = "@netlify/plugin-functions-install-core"
 
+# Redirect everything to index.html (useful for client-side routing)
 [[redirects]]
   from = "/*"
   to = "/index.html"
