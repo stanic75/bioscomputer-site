@@ -11,6 +11,15 @@
   <style>body{font-family:'Manrope',ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial,'Noto Sans'}</style>
 </head>
 <body class='min-h-screen bg-neutral-950 text-neutral-100'>
+  <!-- Hidden static form so Netlify detects the form (same name) -->
+  <form name="contatti" method="POST" data-netlify="true" netlify-honeypot="bot-field" hidden>
+    <input type="hidden" name="form-name" value="contatti" />
+    <input type="text" name="nome" />
+    <input type="email" name="email" />
+    <textarea name="messaggio"></textarea>
+    <div data-netlify-recaptcha="true"></div>
+  </form>
+
   <div id='root'></div>
 
   <script crossorigin src='https://unpkg.com/react@18/umd/react.production.min.js'></script>
@@ -215,38 +224,67 @@
       );
     }
 
-    // --- Contact with form (Netlify-ready) ---
+    // --- helpers for Netlify same-page submit ---
+    function encode(data){
+      return Object.keys(data).map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key])).join('&');
+    }
+
+    // --- Contact with same-page submit + Netlify reCAPTCHA ---
     function Contact(){
+      const [sent,setSent] = useState(false);
+      const [err,setErr] = useState(null);
+
+      const onSubmit = (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const data = new FormData(form);
+        // Add form-name explicitly
+        data.append('form-name','contatti');
+        fetch('/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams(data).toString()
+        })
+        .then(() => { setSent(true); setErr(null); form.reset(); })
+        .catch((error) => { setErr('Invio non riuscito. Riprova più tardi.'); console.error(error); });
+      };
+
       return React.createElement(Section,{id:'contatti',title:'Parliamo del tuo progetto',subtitle:'Ti rispondiamo in 24 ore lavorative'},
         React.createElement('div',{className:'rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-sm'},
-          React.createElement('form',{
-              name:'contatti', method:'POST', 'data-netlify':'true', 'netlify-honeypot':'bot-field',
-              className:'grid gap-4 sm:grid-cols-2'
-            },
-            React.createElement('input',{type:'hidden', name:'form-name', value:'contatti'}),
-            React.createElement('p',{className:'hidden'},
-              React.createElement('label',null,'Non compilare: ', React.createElement('input',{name:'bot-field'}))
-            ),
-            React.createElement('div',null,
-              React.createElement('label',{htmlFor:'nome',className:'block text-sm text-neutral-300'},'Nome e cognome'),
-              React.createElement('input',{id:'nome',name:'nome',required:true,placeholder:'Mario Rossi',
-                className:'mt-1 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-100 placeholder-neutral-500 focus:border-lime-400 focus:outline-none'})
-            ),
-            React.createElement('div',null,
-              React.createElement('label',{htmlFor:'email',className:'block text-sm text-neutral-300'},'Email'),
-              React.createElement('input',{id:'email',name:'email',type:'email',required:true,placeholder:'nome@azienda.it',
-                className:'mt-1 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-100 placeholder-neutral-500 focus:border-lime-400 focus:outline-none'})
-            ),
-            React.createElement('div',{className:'sm:col-span-2'},
-              React.createElement('label',{htmlFor:'messaggio',className:'block text-sm text-neutral-300'},'Messaggio'),
-              React.createElement('textarea',{id:'messaggio',name:'messaggio',required:true,rows:5,placeholder:'Raccontaci cosa ti serve…',
-                className:'mt-1 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-100 placeholder-neutral-500 focus:border-lime-400 focus:outline-none'})
-            ),
-            React.createElement('div',{className:'sm:col-span-2 flex items-center justify-between pt-2'},
-              React.createElement('p',{className:'text-sm text-neutral-400'},'Oppure scrivici a ', React.createElement('a',{href:'mailto:info@bioscomputer.it',className:'underline hover:text-neutral-200'},'info@bioscomputer.it')),
-              React.createElement('button',{type:'submit',className:'inline-flex items-center rounded-xl bg-lime-400 px-4 py-2 text-sm font-semibold text-neutral-900 shadow-sm transition hover:bg-lime-500'},'Invia ', React.createElement('span',{className:'ml-1'},'→'))
+          sent
+            ? React.createElement('div',{className:'rounded-xl border border-lime-500/40 bg-lime-500/10 p-4 text-sm text-lime-300'},'Grazie, messaggio inviato correttamente.')
+            : React.createElement('form',{
+                name:'contatti', method:'POST', 'data-netlify':'true', 'netlify-honeypot':'bot-field', onSubmit:onSubmit,
+                className:'grid gap-4 sm:grid-cols-2'
+              },
+              React.createElement('input',{type:'hidden', name:'form-name', value:'contatti'}),
+              React.createElement('p',{className:'hidden'},
+                React.createElement('label',null,'Non compilare: ', React.createElement('input',{name:'bot-field'}))
+              ),
+              React.createElement('div',null,
+                React.createElement('label',{htmlFor:'nome',className:'block text-sm text-neutral-300'},'Nome e cognome'),
+                React.createElement('input',{id:'nome',name:'nome',required:true,placeholder:'Mario Rossi',
+                  className:'mt-1 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-100 placeholder-neutral-500 focus:border-lime-400 focus:outline-none'})
+              ),
+              React.createElement('div',null,
+                React.createElement('label',{htmlFor:'email',className:'block text-sm text-neutral-300'},'Email'),
+                React.createElement('input',{id:'email',name:'email',type:'email',required:true,placeholder:'nome@azienda.it',
+                  className:'mt-1 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-100 placeholder-neutral-500 focus:border-lime-400 focus:outline-none'})
+              ),
+              React.createElement('div',{className:'sm:col-span-2'},
+                React.createElement('label',{htmlFor:'messaggio',className:'block text-sm text-neutral-300'},'Messaggio'),
+                React.createElement('textarea',{id:'messaggio',name:'messaggio',required:true,rows:5,placeholder:'Raccontaci cosa ti serve…',
+                  className:'mt-1 w-full rounded-xl border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-100 placeholder-neutral-500 focus:border-lime-400 focus:outline-none'})
+              ),
+              React.createElement('div',{className:'sm:col-span-2'},
+                React.createElement('div',{'data-netlify-recaptcha':'true'})
+              ),
+              err && React.createElement('div',{className:'sm:col-span-2 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300'}, err),
+              React.createElement('div',{className:'sm:col-span-2 flex items-center justify-between pt-2'},
+                React.createElement('p',{className:'text-sm text-neutral-400'},'Oppure scrivici a ', React.createElement('a',{href:'mailto:info@bioscomputer.it',className:'underline hover:text-neutral-200'},'info@bioscomputer.it')),
+                React.createElement('button',{type:'submit',className:'inline-flex items-center rounded-xl bg-lime-400 px-4 py-2 text-sm font-semibold text-neutral-900 shadow-sm transition hover:bg-lime-500'},'Invia ', React.createElement('span',{className:'ml-1'},'→'))
+              )
             )
-          )
         )
       );
     }
