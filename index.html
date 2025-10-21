@@ -3,10 +3,54 @@
 <head>
   <meta charset='utf-8' />
   <meta name='viewport' content='width=device-width, initial-scale=1' />
-  <title>Bios Computer — IT gestito e infrastrutture sempre operative dal 1999</title>
-  <meta name='description' content='MSP attivo dal 1999. Gestione IT, sicurezza, cloud, posta aziendale e VoIP per PMI e professionisti.' />
+  <title>Bios Computer — MSP, sicurezza, cloud e VoIP per aziende | dal 1999</title>
+  <meta name='description' content='Bios Computer: gestione completa di reti, server, PC, sicurezza, cloud/M365, posta aziendale/PEC/DNS e centralino VoIP. IT gestito per PMI e professionisti dal 1999.' />
+  <meta name="robots" content="index,follow" />
+  <meta name="theme-color" content="#0a0a0a" />
+
+  <!-- TODO: aggiorna con il dominio reale se diverso -->
+  <link rel="canonical" href="https://www.bioscomputer.it/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Bios Computer — MSP, sicurezza, cloud e VoIP per aziende | dal 1999" />
+  <meta property="og:description" content="Gestione completa di reti, server, PC, sicurezza, cloud/M365, posta aziendale/PEC/DNS e centralino VoIP. Soluzioni IT gestite dal 1999." />
+  <meta property="og:url" content="https://www.bioscomputer.it/" />
+  <meta property="og:image" content="https://www.bioscomputer.it/assets/og-image.jpg" />
+  <meta property="og:locale" content="it_IT" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Bios Computer — MSP, sicurezza, cloud e VoIP per aziende | dal 1999" />
+  <meta name="twitter:description" content="Gestione completa di reti, server, PC, sicurezza, cloud/M365, posta aziendale/PEC/DNS e centralino VoIP. Soluzioni IT gestite dal 1999." />
+  <meta name="twitter:image" content="https://www.bioscomputer.it/assets/og-image.jpg" />
+
   <link href='https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap' rel='stylesheet' />
   <link rel='icon' href='assets/logo_badge.svg' type='image/svg+xml'>
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ProfessionalService",
+    "name": "Bios Computer",
+    "url": "https://www.bioscomputer.it/",
+    "logo": "https://www.bioscomputer.it/assets/logo_bios_pill.svg",
+    "image": "https://www.bioscomputer.it/assets/og-image.jpg",
+    "telephone": "+39 338 811 6529",
+    "email": "info@bioscomputer.it",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Via Fabio Massimo, 11",
+      "postalCode": "64020",
+      "addressLocality": "Morro d’Oro",
+      "addressRegion": "TE",
+      "addressCountry": "IT"
+    },
+    "sameAs": []
+  }
+  </script>
+
   <script src='https://cdn.tailwindcss.com'></script>
   <style>body{font-family:'Manrope',ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial,'Noto Sans'}</style>
 </head>
@@ -30,7 +74,12 @@
 
     const CONFIG = {
       brand: { name:'Bios Computer', phone:'+39 338 811 6529', email:'info@bioscomputer.it', address:'Via Fabio Massimo, 11, 64020 Morro d\'Oro (TE)' },
-      hero: { headline:'La tua infrastruttura IT, sempre sotto controllo.', subheadline:'Gestione completa di reti, server, PC, sicurezza, cloud, posta aziendale e centralino VoIP.', background:'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=1600&auto=format&fit=crop' },
+      hero: {
+        headline:'La tua infrastruttura IT, sempre sotto controllo.',
+        subheadline:'Gestione completa di reti, server, PC, sicurezza, cloud, posta aziendale e centralino VoIP.',
+        tagline:'Soluzioni IT gestite per aziende e professionisti dal 1999.',
+        background:'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=1600&auto=format&fit=crop'
+      },
       highlights: [{label:'Attivi dal',value:'1999'},{label:'Customer rating',value:'4.9/5'},{label:'Supporto',value:'24/7'}],
       services: [
         {k:'MSP', d:'Monitoraggio, patching, backup/DR e gestione proattiva.'},
@@ -106,7 +155,8 @@
         React.createElement(Container,null,
           React.createElement('div',{className:'py-16'},
             React.createElement('h1',{className:'max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl'},CONFIG.hero.headline),
-            React.createElement('p',{className:'mt-6 max-w-2xl text-lg text-neutral-300'},CONFIG.hero.subheadline),
+            React.createElement('p',{className:'mt-6 max-w-3xl text-lg text-neutral-100'},CONFIG.hero.subheadline),
+            React.createElement('p',{className:'mt-2 max-w-3xl text-base text-neutral-300'},CONFIG.hero.tagline),
             React.createElement('div',{className:'mt-8 grid max-w-3xl grid-cols-3 gap-4 rounded-2xl bg-white/5 p-4 text-sm'},
               CONFIG.highlights.map(h=>React.createElement('div',{key:h.label,className:'text-center'},
                 React.createElement('div',{className:'font-bold'},h.value),
@@ -118,7 +168,6 @@
       );
     }
 
-    // --- Services ---
     function Services(){
       return React.createElement(Section,{id:'servizi',title:'Cosa facciamo',subtitle:'Servizi gestiti, infrastruttura, sicurezza e comunicazione'},
         React.createElement('div',{className:'grid gap-4 sm:grid-cols-2 lg:grid-cols-4'},
@@ -133,7 +182,6 @@
       );
     }
 
-    // --- Bulletin Carousel ---
     function BulletinCarousel(){
       const [items,setItems]=useState([]);
       const [loaded,setLoaded]=useState(false);
@@ -191,7 +239,6 @@
       );
     }
 
-    // --- Clients Carousel ---
     function ClientsCarousel(){
       const items = CONFIG.clients;
       const [index, setIndex] = useState(0);
@@ -260,7 +307,6 @@
       );
     }
 
-    // --- Shop / E-commerce ---
     function Shop(){
       const plans = [
         {name:'Assistenza remota 30 minuti', price:'€25', href:CONFIG.shop.minutes30, desc:'Per richieste brevi e diagnosi rapide.'},
@@ -283,12 +329,6 @@
       );
     }
 
-    // --- helpers for Netlify same-page submit ---
-    function encode(data){
-      return Object.keys(data).map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key])).join('&');
-    }
-
-    // --- Contact (same-page submit + recaptcha) ---
     function Contact(){
       const [sent,setSent] = useState(false);
       const [err,setErr] = useState(null);
