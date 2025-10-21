@@ -53,7 +53,11 @@
         React.createElement(Container,null,
           React.createElement('div',{className:'flex h-16 items-center justify-between'},
             React.createElement('a',{href:'#',className:'flex items-center gap-3'},
-              React.createElement('img',{src:'assets/logo_bios.svg',alt:'',className:'h-12 w-auto'}),
+              React.createElement('img',{
+                src:'assets/logo_bios_pill.svg',
+                alt:'Bios Computer',
+                className:'h-12 w-auto rounded-full shadow-sm'
+              }),
               React.createElement('span',{className:'sr-only'},'Bios Computer')
             ),
             React.createElement('nav',{className:'hidden items-center gap-6 md:flex'},
@@ -88,155 +92,9 @@
       );
     }
 
-    // --- Bulletin Carousel ---
-    function BulletinCarousel(){
-      const [items,setItems]=useState([]);
-      const [loaded,setLoaded]=useState(false);
-      const [idx,setIdx]=useState(0);
-      const [paused,setPaused]=useState(false);
-      const timerRef = useRef(null);
-
-      useEffect(()=>{(async()=>{
-        try{
-          const r = await fetch(CONFIG.bulletinEndpoint,{headers:{Accept:'application/json'}});
-          const data = r.ok ? await r.json() : {posts:[]};
-          const list = Array.isArray(data.posts) ? data.posts.slice(0,10) : [];
-          setItems(list);
-        }catch(e){} finally{ setLoaded(true); }
-      })();},[]);
-
-      useEffect(()=>{
-        if(!items.length || paused) return;
-        timerRef.current = setInterval(()=> setIdx((i)=> (i+1) % items.length ), 7000);
-        return ()=> clearInterval(timerRef.current);
-      },[items,paused]);
-
-      const go = (n)=> setIdx((i)=> (i+n+items.length) % items.length);
-
-      return React.createElement(Section,{id:'bollettino',title:'Bollettino IT',subtitle:'Minacce, patch e soluzioni per aziende. Aggiornato regolarmente.'},
-        React.createElement('div',{
-          className:'relative mx-auto max-w-4xl overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900',
-          onMouseEnter:()=>setPaused(true),
-          onMouseLeave:()=>setPaused(false)
-        },
-          React.createElement('div',{className:'relative h-64'},
-            items.map((p,i)=> React.createElement('article',{
-              key:p.id||i,
-              className:`absolute inset-0 p-6 transition-all duration-700 ease-out ${i===idx?'opacity-100 translate-y-0':'opacity-0 translate-y-3'}`
-            },
-              React.createElement('div',{className:'flex items-center justify-between text-xs text-neutral-400'},
-                React.createElement('span',null, new Date(p.date).toLocaleDateString('it-IT')),
-                p.source && p.source.label && React.createElement('span',null,p.source.label)
-              ),
-              React.createElement('h3',{className:'mt-3 text-xl font-semibold text-neutral-100'}, p.title),
-              React.createElement('p',{className:'mt-2 text-sm text-neutral-300'}, p.summary || ''),
-              p.source && p.source.href && React.createElement('a',{href:p.source.href,target:'_blank',rel:'noopener',
-                className:'mt-4 inline-flex items-center gap-1 text-sm text-lime-300 hover:text-lime-200'},'Apri fonte →')
-            ))
-          ),
-          items.length>1 && React.createElement('div',{className:'absolute inset-x-0 bottom-3 flex items-center justify-between px-4'},
-            React.createElement('button',{onClick:()=>go(-1),className:'rounded-full bg-neutral-800/70 px-3 py-2 text-sm hover:bg-neutral-700/80'},'←'),
-            React.createElement('div',null,
-              items.map((_,i)=> React.createElement('span',{key:i,className:`mx-1 inline-block h-2 w-2 rounded-full ${i===idx?'bg-lime-400':'bg-neutral-600'}` }))
-            ),
-            React.createElement('button',{onClick:()=>go(1),className:'rounded-full bg-neutral-800/70 px-3 py-2 text-sm hover:bg-neutral-700/80'},'→')
-          )
-        ),
-        loaded && !items.length && React.createElement('p',{className:'mt-4 text-center text-sm text-neutral-400'},'Nessun aggiornamento disponibile al momento.')
-      );
-    }
-
-    // --- Clients Carousel ---
-    function ClientsCarousel(){
-      const items = CONFIG.clients;
-      const [index, setIndex] = useState(0);
-      const [perView, setPerView] = useState(4);
-      const [paused, setPaused] = useState(false);
-      const timerRef = useRef(null);
-
-      useEffect(()=>{
-        const mq1 = window.matchMedia('(max-width: 640px)');
-        const mq2 = window.matchMedia('(max-width: 1024px)');
-        const calc = () => setPerView(mq1.matches ? 1 : (mq2.matches ? 2 : 4));
-        calc();
-        mq1.addEventListener('change', calc);
-        mq2.addEventListener('change', calc);
-        return ()=>{ mq1.removeEventListener('change', calc); mq2.removeEventListener('change', calc); };
-      },[]);
-
-      useEffect(()=>{
-        if(!items.length || paused) return;
-        timerRef.current = setInterval(()=> setIndex(i => (i + 1) % items.length), 3500);
-        return ()=> clearInterval(timerRef.current);
-      },[items.length, paused]);
-
-      const itemWidth = 100 / perView;
-      const translate = -(index * itemWidth);
-
-      const LogoCard = ({c}) => {
-        const [imgOk,setImgOk]=useState(true);
-        return React.createElement('a',{
-            href:c.site, target:'_blank', rel:'noopener',
-            className:'group flex items-center justify-center',
-            style:{ width: `${itemWidth}%` }
-          },
-          React.createElement('div',{className:'m-4 w-[92%] rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-6 text-center shadow-sm transition duration-300 group-hover:border-neutral-700 group-hover:shadow-md'},
-            imgOk && c.logo ?
-              React.createElement('img',{
-                src:c.logo, alt:c.name, className:'mx-auto max-h-14 w-auto object-contain brightness-[.95] contrast-125 grayscale opacity-90 transition group-hover:opacity-100',
-                onError:()=>setImgOk(false)
-              })
-            :
-              React.createElement('div',{className:'text-base font-semibold text-neutral-100'}, c.name)
-          )
-        );
-      };
-
-      return React.createElement(Section,{id:'clienti',title:'Aziende che seguiamo',subtitle:null},
-        React.createElement('div',{
-          className:'relative overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900',
-          onMouseEnter:()=>setPaused(true), onMouseLeave:()=>setPaused(false),
-          onTouchStart:()=>setPaused(true), onTouchEnd:()=>setPaused(false)
-        },
-          React.createElement('div',{
-            className:'flex transition-transform duration-700 ease-out',
-            style:{ width: `${items.length * itemWidth}%`, transform: `translateX(${translate}%)` }
-          },
-            items.map((c, i) => React.createElement(LogoCard,{key:c.name + i, c}))
-          ),
-          items.length>1 && React.createElement('div',{className:'absolute inset-x-0 bottom-3 flex items-center justify-center'},
-            items.map((_,i)=> React.createElement('button',{
-              key:i, onClick:()=>setIndex(i),
-              className:`mx-1 inline-block h-2.5 w-2.5 rounded-full ${i===index?'bg-lime-400':'bg-neutral-600'} focus:outline-none focus:ring-2 focus:ring-lime-400/60`
-            }))
-          )
-        ),
-        React.createElement('p',{className:'mt-6 text-center text-sm text-neutral-300'},'Alcune delle aziende che si affidano a Bios Computer per la gestione della propria infrastruttura IT.')
-      );
-    }
-
-    function Contact(){return React.createElement(Section,{id:'contatti',title:'Parliamo del tuo progetto',subtitle:'Ti rispondiamo in 24 ore lavorative'},
-      React.createElement('div',{className:'rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-sm'},
-        React.createElement('p',null,'📞 +39 338 811 6529 — ✉️ info@bioscomputer.it'),
-        React.createElement('p',{className:'mt-2 text-neutral-300'},'Via Fabio Massimo, 11, 64020 Morro d\'Oro (TE)')
-      )
-    );}
-
-    function Footer(){return React.createElement('footer',{className:'border-t border-neutral-800 bg-neutral-950'},
-      React.createElement(Container,null,
-        React.createElement('div',{className:'flex flex-col items-center justify-between gap-4 py-8 md:flex-row'},
-          React.createElement('p',{className:'text-sm text-neutral-400'},'© ',new Date().getFullYear(),' Bios Computer. Tutti i diritti riservati.')
-        )
-      )
-    );}
-
     function App(){return React.createElement(React.Fragment,null,
       React.createElement(Header,null),
-      React.createElement(Hero,null),
-      React.createElement(BulletinCarousel,null),
-      React.createElement(ClientsCarousel,null),
-      React.createElement(Contact,null),
-      React.createElement(Footer,null)
+      React.createElement(Hero,null)
     );}
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
